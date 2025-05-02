@@ -6,7 +6,7 @@ Definition decimal := seq nat.
 Parameter allowed : decimal -> Prop.
 
 Axiom only_digits : forall d : decimal,
-  allowed d -> all (fun x => x < 10) d.
+  allowed d -> all (leq^~ 9) d.
 
 Axiom no_leading_zeros : forall d : decimal,
   allowed d -> head 0 d = 0 -> d = [:: 0].
@@ -18,13 +18,13 @@ Axiom one_if_product_is_odd : forall d : decimal,
   allowed d -> (1 \in d = odd (foldr muln 1 d)).
 
 Axiom two_if_strictly_increasing : forall d : decimal,
-  allowed d -> (2 \in d = pairwise (fun x y => x < y) d).
+  allowed d -> (2 \in d = sorted ltn d).
 
 Axiom three_if_all_different : forall d : decimal,
-  allowed d -> (3 \in d = pairwise (fun x y => x != y) d).
+  allowed d -> (3 \in d = uniq d).
 
 Axiom four_if_no_digit_above_4 : forall d : decimal,
-  allowed d -> (4 \in d = all (fun x => x <= 4) d).
+  allowed d -> (4 \in d = all (leq^~ 4) d).
 
 Axiom five_if_max_5_digits : forall d : decimal,
   allowed d -> (5 \in d = (size d <= 5)).
@@ -105,7 +105,7 @@ Proof.
   move: H_all_odd.
   elim: xs => //= y ys Hrec /andP[H_odd_y ?].
   apply/andP; split; last by apply: Hrec.
-  clear Hrec.
+  clear Hrec. 
   apply/andP; split.
   - move: H_odd_x.
     apply: contraL.
@@ -117,16 +117,55 @@ Proof.
     by rewrite H_odd_x.
 Qed.
 
-Lemma no_1 : forall d : decimal,
+Theorem no_1 : forall d : decimal,
   allowed d -> 1 \notin d.
 Proof.
   move=> d Hallowed.
-  apply/negP.
-  move=> H1.
-  exfalso.
+  apply/negP=> H1.
   have/no_8_implies_even_digit: (8 \notin d) by apply: one_implies_no_8.
   move=> not_all_odd.
   have:= (not_all_odd Hallowed).
   have->:= (one_implies_only_odd_digit _ Hallowed H1).
   by [].
+Qed.
+
+Lemma two_implies_3 : forall d : decimal,
+  allowed d -> (2 \in d -> 3 \in d).
+Proof.
+  move=> d Hallowed.
+  have->:= (two_if_strictly_increasing _ Hallowed).
+  have->:= (three_if_all_different _ Hallowed).
+  rewrite ltn_sorted_uniq_leq.
+  by move=> /andP[].
+Qed.
+
+Lemma three_implies_no_4 : forall d : decimal,
+  allowed d -> (3 \in d -> 4 \notin d).
+Proof.
+  move=> d Hallowed.
+  have->:= (three_if_all_different _ Hallowed).
+  have->:= (four_if_no_digit_above_4 _ Hallowed).
+  move=> H3.
+  apply/negP=> H4.
+  have/uniq_leq_size //=: ({subset d <= iota 0 5}). {
+    move: H4. clear.
+    move=> /allP.
+    move=> H4 x.
+    move=> /H4.
+    by rewrite mem_iota.
+  }
+  move=> Hsub.
+  apply Hsub in H3.
+  move: H3.
+  rewrite -five_if_max_5_digits; last first. by [].
+  move: H4. clear.
+  elim: d => //= x xs Hrec.
+  rewrite in_cons.
+  move=> /andP[H4 ?] /orP; case.
+  - move=> /eqP H5.
+    subst x.
+    by rewrite ltnn in H4.
+  - move=> /Hrec Hrec2.
+    apply: Hrec2.
+    by [].
 Qed.
