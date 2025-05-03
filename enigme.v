@@ -49,7 +49,7 @@ Proof.
   rewrite H6.
   apply: contra => _.
   have := (perm_rot (index 6 d) d).
-  rewrite rot_index; last first. by [].
+  rewrite rot_index; last by [].
   move=> /permPl Hperm.
   rewrite -(perm_big _ Hperm) /= big_cons.
   by apply: dvdn_mulr.
@@ -58,24 +58,18 @@ Qed.
 Theorem no_6 : forall d : decimal,
   allowed d -> 6 \notin d.
 Proof.
-  move=> d /six_implies_no_6 Hcontra.
+  move=> d /six_implies_no_6.
+  rewrite -{1}[_ \in _]negbK.
   apply: wlog_neg.
-  apply: contraL => ?.
-  apply/negPn.
-  by apply: Hcontra.
 Qed.
 
 Lemma one_implies_only_odd_digit : forall d : decimal,
   allowed d -> 1 \in d -> all odd d.
 Proof.
   move=> d /one_if_product_is_odd->.
-  elim: d => //= x xs.
-  move=> Hrec.
+  elim: d => //= x xs Hrec.
   rewrite big_cons oddM.
-  move=> /andP[? ?].
-  apply/andP; split.
-  - by [].
-  - by apply: Hrec.
+  move=> /andP[->] //=.
 Qed.
 
 Lemma one_implies_no_8 : forall d : decimal,
@@ -105,14 +99,10 @@ Proof.
   apply/allP=> y Hy.
   have H_odd_y := (Hall_odd _ Hy).
   apply/andP; split.
-  - move: H_odd_x.
-    apply: contraL.
-    move=> /eqP-> //=.
-    by rewrite H_odd_y.
-  - move: H_odd_y.
-    apply: contraL.
-    move=> /eqP-> //=.
-    by rewrite H_odd_x.
+  all: [> move: H_odd_x | move: H_odd_y ].
+  all: apply: contraL.
+  all: move=> /eqP-> //=.
+  all: by rewrite negbK.
 Qed.
 
 Theorem no_1 : forall d : decimal,
@@ -141,12 +131,23 @@ Proof.
   case: x => //=.
   - move=> H0 H2 _.
     rewrite in_cons /= in H2.
-    injection H0; last first. by [].
+    injection H0; last by [].
     move=> Hempty.
     by rewrite Hempty in H2.
-  - move=> n _ _ H0.
+  - move=> n _ _.
+    rewrite in_cons //=.
     (* 0 is not the first element, but then the seq is not sorted *)
-Admitted.    
+    apply: contraL.
+    move=> /order_path_min.
+    move=> Hmin.
+    have {}Hmin := (Hmin ltn_trans).
+    move: Hmin.
+    apply: contraL.
+    move=> H0.
+    apply/negP.
+    move=> /allP Hall.
+    by have {}Hall := (Hall _ H0).
+Qed.
 
 Lemma two_implies_3 : forall d : decimal,
   allowed d -> (2 \in d -> 3 \in d).
@@ -174,7 +175,7 @@ Proof.
   move=> Hsub.
   apply Hsub in H3.
   move: H3.
-  rewrite -five_if_max_5_digits; last first. by [].
+  rewrite -five_if_max_5_digits; last by [].
   move: H4. clear.
   move=> /allP Hall H5.
   by have:= (Hall _ H5).
