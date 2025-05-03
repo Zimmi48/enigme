@@ -36,7 +36,7 @@ Axiom seven_if_last_digit_is_even : forall d : decimal,
   allowed d -> (7 \in d = (~~ odd (last 0 d))).
 
 Axiom eight_if_no_consecutive_digits : forall d : decimal,
-  allowed d -> (8 \in d = pairwise (fun x y => (x != y.+1) && (y != x.+1)) d).
+  allowed d -> (8 \in d = all2rel (fun x y => (x != y.+1)) d).
 
 Axiom nine_if_digit_is_sum_of_two_others : forall d : decimal,
   allowed d -> (9 \in d <-> exists x y z, subseq [:: x; y; z] d && (
@@ -90,19 +90,15 @@ Lemma no_8_implies_even_digit : forall d : decimal,
 Proof.
   move=> d /eight_if_no_consecutive_digits->.
   apply: contra.
-  elim: d => //= x xs Hrec.
-  move=> /andP[H_odd_x H_all_odd].
-  apply/andP; split; last by apply: Hrec.
-  clear Hrec.
-  move: H_all_odd.
-  move=> /allP Hall_odd.
-  apply/allP=> y Hy.
-  have H_odd_y := (Hall_odd _ Hy).
-  apply/andP; split.
-  all: [> move: H_odd_x | move: H_odd_y ].
-  all: apply: contraL.
-  all: move=> /eqP-> //=.
-  all: by rewrite negbK.
+  move=> /allP Hodd.
+  apply/allP.
+  move=> x /Hodd Hx.
+  apply/allP.
+  move=> y /Hodd Hy.
+  move: Hx.
+  apply: contraL.
+  move=> /eqP-> //=.
+  by rewrite Hy.
 Qed.
 
 Theorem no_1 : forall d : decimal,
