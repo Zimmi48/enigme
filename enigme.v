@@ -168,12 +168,27 @@ Section Allowed.
 
   Lemma two_implies_no_8 : 2 \in d -> 8 \notin d.
   Proof.
-    (* 2 => 3 *)
-    (* 2 and 3 => no 8 by definition of 8 *)
     move=> H2.
+    (* 2 => 3 *)
     have H3 := (two_implies_3 H2).
-    have->:= (eight_if_no_consecutive_digits _ Hallowed).
-    Search pairwise.
+    (* 2 and 3 => no 8 by definition of 8 *)
+    rewrite eight_if_no_consecutive_digits; last by [].
+    move: H2.
+    apply: contraL.
+    move=> /allP H8.
+    apply/negP.
+    have /allP {}H8 := (H8 _ H3).
+    move=> H2.
+    by have:= (H8 _ H2).
+  Qed.
+
+  Lemma two_remaining_digits : 2 \in d -> {subset d <= [:: 2; 3; 5; 7; 9] }.
+  Proof.
+    have : ({subset d <= iota 0 10}). {
+      have:= (only_digits _ Hallowed).
+      move=> /allP Hdigits x /Hdigits.
+      by rewrite mem_iota.
+    }
   Admitted.
 
   Lemma two_implies_no_7 : 2 \in d -> 7 \notin d.
