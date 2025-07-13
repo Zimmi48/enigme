@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - mathcomp/mathcomp:latest-coq-8.20
+          - mathcomp/mathcomp:latest-rocq-prover-9.0
+      max-parallel: 4
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rocq-community/docker-coq-action@v1.5.2
+        with:
+          opam_file: 'enigme.opam'
+          custom_image: ${{ matrix.image }}
